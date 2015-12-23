@@ -21,6 +21,13 @@ sealed trait Option[+A] {
   def filter(f: A => Boolean): Option[A] =
     this.flatMap(a => if (f(a)) Some(a) else None)
 
+}
+
+case class Some[+A](get: A) extends Option[A]
+case object None extends Option[Nothing]
+
+object OptionCompanion {
+
   def mean(xs: Seq[Double]): Option[Double] =
     if (xs.isEmpty) None else Some(xs.sum / xs.length)
 
@@ -28,14 +35,13 @@ sealed trait Option[+A] {
     mean(xs).flatMap(m => mean(xs.map(x => math.pow(x - m , 2))))
 
   def map2[A,B,C](a: Option[A], b: Option[B])(f: (A,B) => C): Option[C] =
-    a.flatMap( aPrime => b.flatMap( bPrime => Some( f(aPrime,bPrime) )))
+    a.flatMap( aPrime => b.map( bPrime => f(aPrime,bPrime) ))
 
-  def sequence[A](a: List[Option[A]]): Option[List[A]] = a match {
-    case Nil => None
-    case x::xs => xs.foldRight(x.map( _ :: List()))( map2(_,_)( _ :: _ ) )
-  }
+  def sequence[A](a: List[Option[A]]): Option[List[A]] =
+    traverse(a)( x => x )
+
+  def traverse[A, B](a: List[A])(f: A => Option[B]): Option[List[B]] =
+    a.foldRight[Option[List[B]]](Some(Nil))(
+      (h,t) => t.flatMap( tt => f(h).map( _ :: tt ))
+    )
 }
-
-case class Some[+A](get: A) extends Option[A]
-case object None extends Option[Nothing]
-

@@ -3,4 +3,3 @@ import org.scalacheck.Prop.{forAll,BooleanOperators}
 
 object TreeProperties extends Properties("Tree") {
 }
-
