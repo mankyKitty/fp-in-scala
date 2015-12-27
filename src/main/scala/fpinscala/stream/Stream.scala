@@ -75,6 +75,16 @@ sealed trait Stream[+A] {
   def startsWith[A](s: Stream[A]): Boolean =
     this.zipWith(s)( _ == _ ).forAll( _ == true )
 
+  def scanRight[B](z: => B)(f: (A, => B) => B): Stream[B] =
+    unfold(this.tails)(
+      _ match {
+        case Empty => None
+        case Cons(h,t) => Some(
+          (h().foldRight(z)(f), t())
+        )
+      }
+    ) append cons(z,empty)
+
   def tails: Stream[Stream[A]] =
     unfold(this)(
       _ match {
@@ -97,7 +107,7 @@ sealed trait Stream[+A] {
         case (Empty,Empty) => None
         case (a,b) => Some(
           (a.headOption,b.headOption),
-          (a.drop(1),b.drop(1))
+          (a drop 1, b drop 1)
         )
       }
     )
