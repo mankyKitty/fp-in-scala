@@ -1,3 +1,4 @@
+package fpinscala.option
 // Hide the default implementations
 import scala.{Option => _, Some => _, Either => _,_}
 
@@ -21,6 +22,10 @@ sealed trait Option[+A] {
   def filter(f: A => Boolean): Option[A] =
     this.flatMap(a => if (f(a)) Some(a) else None)
 
+  def option[B](f: A => B)(g: => B) = this match {
+    case None => g
+    case Some(a) => f(a)
+  }
 }
 
 case class Some[+A](get: A) extends Option[A]
