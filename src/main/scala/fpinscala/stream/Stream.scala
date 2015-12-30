@@ -72,25 +72,22 @@ sealed trait Stream[+A] {
     //   (a,b) => if (p(a)) cons(a, b.takeWhile(p)) else Empty
     // )
 
+  def optionStream[B](f: (() => A, () => Stream[A]) => B): Option[B] =
+    this match {
+      case Empty => None
+      case Cons(h,t) => Some(f(h,t))
+    }
+
   def startsWith[A](s: Stream[A]): Boolean =
     this.zipWith(s)( _ == _ ).forAll( _ == true )
 
   def scanRight[B](z: => B)(f: (A, => B) => B): Stream[B] =
     unfold(this.tails)(
-      _ match {
-        case Empty => None
-        case Cons(h,t) => Some(
-          (h().foldRight(z)(f), t())
-        )
-      }
+      _ optionStream( (h,t) => (h().foldRight(z)(f), t()) )
     ) append cons(z,empty)
 
   def tails: Stream[Stream[A]] =
-    unfold(this)(
-      _ match {
-        case Empty => None
-        case Cons(h,t) => Some( (Cons(h,t), t()) )
-      }
+    unfold(this)(_ optionStream( (h,t) => (Cons(h,t), t()) )
     ) append Empty
 
   def zipWith[B,C](s2: Stream[B])(f: (A,B) => C ): Stream[C] =
